@@ -1,0 +1,79 @@
+; hgimg4を使ってフルスクリーンで四角をバウンドさせる
+
+	#include "hgimg4.as"
+	
+	; 実行ファイル名とexeファイル生成を指定
+	#packopt name "boundball"
+	#packopt type 0
+
+	title "HGIMG4 fullscreen"
+
+	; ginfo_dispx, ginfo_dispy ... デスクトップサイズ
+
+	; フルスクリーン表示を指定
+	bgscr 0, ginfo_dispx, ginfo_dispy, 256
+
+	gpreset
+	setcls CLSMODE_SOLID, $101010
+
+	; マウスカーソル非表示
+	mouse -1
+
+	x = ginfo_dispx / 2
+	y = ginfo_dispy / 2
+	px = 8
+	py = 8
+	r = ginfo_dispy / 20
+
+	; マウス座標を記憶
+	mx = mousex
+	my = mousey
+
+	; キー入力やマウスクリックで終了させる
+	onkey goto *endjob
+	onclick goto *endjob
+
+*mainloop
+repeat
+	; main loop
+	
+	; マウスを動かすと終了
+	nmx = mousex
+	nmy = mousey
+	dmx = nmx - mx
+	dmy = nmy - my
+	d = ((dmx * dmx) + (dmy * dmy))
+	if d >= (32 * 32) : goto *endjob
+	mx = nmx
+	my = nmy
+
+	; 描画開始
+	redraw 0
+
+	color 160, 160, 160
+	pos 10, 10 : mes "ESC key to exit"
+	
+	; 四角を描画
+	hsvcolor cnt/2,255,255
+	alpha = 200
+	gmode 3, 200, 200, alpha	; 半透明で描画
+	grect x, y, double(cnt)*0.07, r * 2, r * 2
+
+	; 四角を移動
+	x += px
+	y += py
+	if (x<r) | (x>(ginfo_sx - r)) : px=-px
+	if (y<r) | (y>(ginfo_sy - r)) : py=-py
+
+	; 描画終了
+	redraw 1
+	
+	await 1000/60
+loop
+
+*endjob
+	; マウスカーソル表示
+	mouse
+	
+	end
+	

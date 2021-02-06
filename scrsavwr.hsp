@@ -1,0 +1,219 @@
+    ; scrsavwr - Screensaver Wrapper on Windows
+    ;
+    ; スクリーンセーバ起動時に、
+    ; iniファイルに書かれたプログラムを呼び出すラッパー。
+    ;
+    ; 「あるがーまんスクリーンセーバー for HSP3」をforkして作成
+    ;
+    ; HSPスクリプトエディタで動作確認する場合、
+    ; HSPメニュー -> 起動オプション -> 「/s」「/p」等を指定。
+
+    ; ----------------------------------------
+    ; Windows用スクリーンセーバーは、
+    ; 以下のコマンドラインスイッチで処理を変える。
+    ;
+    ;   /s フルスクリーン(実際のスクリーンセーバー画面を実行)
+    ;   /c コンフィグ(設定画面を表示)
+    ;   /p プレビュー(小画面に表示されるモード)
+
+    ; 実行ファイル自動作成指定パラメータ
+    #pack "scrsavwr.bmp"        ; 同梱ファイル
+    #packopt name "scrsavwr"    ; 生成ファイル名
+    #packopt type 2             ; .scr生成を指定
+    #packopt xsize 640  ; 設定画面横幅
+    #packopt ysize 240  ; 設定画面縦幅
+
+    ; 自身のファイルパス取得用
+    #uselib "kernel32"
+    #func GetModuleFileName "GetModuleFileNameA" int, int, int
+
+    fullscreen_bin = ""
+    config_bin = ""
+    preview_img = ""
+    picid = 3
+
+    ;; 自身のファイル名を取得
+    sdim filepath, 256
+    GetModuleFileName, varptr(filepath), 256
+    myfilename = getpath(filepath, 1+8)
+    titlestr = myfilename
+    
+    ;; iniファイルパスを生成
+    ini_filepath = getpath(filepath, 1) + ".ini"
+
+    ;; iniファイルを読んで解析
+    gosub *readini
+
+    ;; コマンドラインオプション解析
+    s = dir_cmdline   ; コマンドライン文字列取得
+    i = instr(s, 0, "/")    ; "/" の出現位置を検索
+    
+    if i = -1 : goto *sscfg     ; オプション無しならコンフィグ
+    
+    a = strmid(s, i, 2)     ; 2文字だけ取り出し
+    
+    if a = "/p" | a = "/P" : goto *sspre    ; プレビュー
+    if a = "/s" | a = "/S" : goto *ssproc   ; フルスクリーン
+    if a = "/c" | a = "/C" : goto *sscfg    ; コンフィグ
+    
+    ; コマンドラインがどれでもない時はエラー表示
+    dialog "Unknown switch [" + s + "]"
+    end
+
+*sscfg
+    ; コンフィグ(設定画面)
+    
+    if config_bin ! "" {
+        ; 設定画面用プログラムを呼び出して終了
+        exec config_bin
+        end
+    }
+
+    ; 設定画面用プログラムが指定されてない場合
+    ; about画面のみを表示
+    title titlestr
+    gsel 0
+    width 640, 240
+    cls
+    pos 4, 8
+    mes titlestr
+    mes "------------------------"
+    mes "Screensaver Wrapper on Windows\n"
+    mes "ini     : " + ini_filepath
+    mes "fullscr : " + fullscreen_bin
+    mes "config  : " + config_bin
+    mes "preview : " + preview_img
+    
+    pos 640 - 80, 240 - 40
+    button "OK", *ssend
+    stop
+    
+*ssend
+    end
+
+*sspre
+    ; プレビュー画面
+    ; スクリーンセーバー選択時に見える、小画面内のプレビュー処理。
+    ; ginfo_winx, ginfo_winy で画面サイズを取得してから描画。
+    ; bmp画像は 152 x 112 dot のサイズで用意してある。
+    
+    cls 4           ; 黒で画面クリア
+    if preview_img = "" {
+        preview_img = "scrsavwr.bmp"
+    }
+    picpath = preview_img
+    gosub *pictureload
+    gsel 0
+    dw = ginfo_winx
+    dh = ginfo_winy
+    pos 0, 0
+    gzoom dw, dh, picid, 0, 0, img_w, img_h, 1
+    stop
+
+*ssproc
+    ; フルスクリーン
+    ; スクリーンセーバー本体の処理。
+    
+    if fullscreen_bin ! "" {
+        exec fullscreen_bin
+        end
+    }
+    
+    ; ginfo_dispx, ginfo_dispy : 全画面サイズ
+    ; 以下で全画面スクリーンを作成。
+    ; bgscr 2, ax, ay, 0, 0, 0, ax,ay
+    ; ウインドゥID2に全画面256色パレットモードのウインドウが作成される。
+    ; ここで描画された内容が、スクリーンセーバーの実行画面になる。
+    ;
+    ; スクリーンセーバからの復帰チェックは行なう必要無し。
+    ; マウスを動かすと自動的に中断され復帰するようになっている。
+    ; スクリプトエディタからの実行時はマウスを動かしても復帰しないので Alt + F4 で終了。
+    
+    ; ax, ay にスクリーンセーバ動作画面サイズを入れておく。
+    ax = ginfo_dispx
+    ay = ginfo_dispy
+
+    ; ID2にフルスクリーン画面を作成
+    bgscr 2, ax, ay, 0, 0, 0, ax, ay
+
+    cls 4           ; 黒で画面クリア
+    color 200, 200, 200
+    pos 0, 0
+    mes fullscreen_bin
+    mes config_bin
+    mes preview_img
+    stop
+
+*pictureload
+    ; 画像読み込みサブルーチン
+    ; picid(ID3) の画面に、picpath(bmp画像のパス)を読み込む。
+    ; 画像サイズを img_w, img_h に入れて戻る。
+    buffer picid, 640, 640
+    picload picpath
+    img_w = ginfo_winx
+    img_h = ginfo_winy
+    return
+
+*readini
+    ; iniファイル読み込み
+    ; ini_filepath に iniファイルのパスを入れて呼ぶ
+    
+    ini_data = ""
+    notesel ini_data
+    
+    ; iniファイル存在チェック
+    exist ini_filepath
+    if strsize = -1 {
+        mes "Error : Not found " + ini_filepath
+        stop
+    }
+    
+    ; iniファイルを読み込む
+    noteload ini_filepath
+
+    ; 1行ずつ内容を解析して記録
+    sdim ld, 512
+    repeat notemax
+        noteget ld, cnt     ; 1行分を取得
+
+        ; 行頭が ';' ならコメント行扱いにする
+        if peek(ld, 0) = ';' : continue
+        
+        split ld, "=", kind, cmd
+        
+        if kind = "fullscreen_bin" {
+            fullscreen_bin = cmd
+        } else : if kind = "config_bin" {
+            config_bin = cmd
+        } else : if kind = "preview_img" {
+            gosub *checkfileexist
+            preview_img = cmd
+        } else {
+            pos 0, 0
+            mes "Error : ini file is illegal.\n"
+            mes ld
+            stop
+        }
+    loop
+
+/*
+    pos 0, 0
+    mes "fullscr : " + fullscreen_bin
+    mes "config  : " + config_bin
+    mes "preview : " + preview_img
+    stop
+*/
+    
+    return
+
+; ファイルの存在チェック。
+; cmd にファイルパスを入れて呼ぶ。
+; ファイルが存在しなかったら cmd が空文字列になって返る。
+*checkfileexist
+    if cmd = "" : return
+    exist cmd
+    if strsize = -1 {
+        cmd = ""
+    }
+    return
+

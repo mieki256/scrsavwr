@@ -1,0 +1,27 @@
+; 設定ダイアログ相当
+
+	#packopt name "boundball_about"	; exeファイル名
+	#packopt type 0					; exeファイル生成を指定
+		
+	#packopt xsize 320	; 設定画面横幅
+	#packopt ysize 200	; 設定画面縦幅
+	
+	title_str = "boundball"
+	version = "0.0.1"
+	
+	title title_str
+	gsel 0
+	width 320, 200
+	
+	cls
+	pos 4,8
+	mes title_str + " - Version " + version
+	mes " "
+	mes "(Config Dialog sample)"
+	
+	pos 240,160 : button "OK", *cfgend
+	stop
+
+*cfgend
+	end
+
