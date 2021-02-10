@@ -5,17 +5,21 @@
 	; 実行ファイル名とexeファイル生成を指定
 	#packopt name "boundball"
 	#packopt type 0
+	#packopt hide 1		; 起動時のウインドウ非表示
 
 	title "HGIMG4 fullscreen"
 
 	; ginfo_dispx, ginfo_dispy ... デスクトップサイズ
 
 	; フルスクリーン表示を指定
-	bgscr 0, ginfo_dispx, ginfo_dispy, 256
+	screen 0, ginfo_dispx, ginfo_dispy, screen_hide+256
+	; bgscr 0, ginfo_dispx, ginfo_dispy, 256
+	
+	gsel 0, 1		; ウインドウをアクティブ化
 
 	gpreset
 	setcls CLSMODE_SOLID, $101010
-
+	
 	; マウスカーソル非表示
 	mouse -1
 
@@ -68,7 +72,7 @@ repeat
 	; 描画終了
 	redraw 1
 	
-	await 1000/60
+	await (1000 / 60)
 loop
 
 *endjob

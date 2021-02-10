@@ -7,6 +7,9 @@
     ;
     ; HSPスクリプトエディタで動作確認する場合、
     ; HSPメニュー -> 起動オプション -> 「/s」「/p」等を指定。
+    ;
+    ; 1.0.1 - 2021/02/10 起動時、ウインドウを非表示にした
+    ; 1.0.0 - 2021/02/07 公開
 
     ; ----------------------------------------
     ; Windows用スクリーンセーバーは、
@@ -20,6 +23,7 @@
     #pack "scrsavwr.bmp"        ; 同梱ファイル
     #packopt name "scrsavwr"    ; 生成ファイル名
     #packopt type 2             ; .scr生成を指定
+    #packopt hide 1				; 初期ウインドウ非表示
     #packopt xsize 640  ; 設定画面横幅
     #packopt ysize 240  ; 設定画面縦幅
 
@@ -72,7 +76,7 @@
     ; 設定画面用プログラムが指定されてない場合
     ; about画面のみを表示
     title titlestr
-    gsel 0
+    gsel 0, 1
     width 640, 240
     cls
     pos 4, 8
@@ -103,7 +107,7 @@
     }
     picpath = preview_img
     gosub *pictureload
-    gsel 0
+    gsel 0, 1
     dw = ginfo_winx
     dh = ginfo_winy
     pos 0, 0
