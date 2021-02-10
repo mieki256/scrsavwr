@@ -1,0 +1,4 @@
+fullscreen_bin=[INSTALL_DIR]\boundball.exe
+config_bin=wscript [INSTALL_DIR]\boundball_about.vbs
+; config_bin=[INSTALL_DIR]\boundball_about.exe
+preview_img=[INSTALL_DIR]\boundball.bmp
